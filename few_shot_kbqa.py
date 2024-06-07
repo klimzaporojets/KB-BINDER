@@ -1,6 +1,11 @@
+import os
+import pickle
+
 import openai
 import json
 import spacy
+from tqdm import tqdm
+
 from sparql_exe import execute_query, get_types, get_2hop_relations, lisp_to_sparql
 from utils import process_file, process_file_node, process_file_rela, process_file_test
 from rank_bm25 import BM25Okapi
@@ -15,12 +20,12 @@ from pyserini.search.faiss import AutoQueryEncoder
 import random
 import itertools
 
-
 logging.getLogger().setLevel(logging.INFO)
 logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
                     level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger("time recoder")
+
 
 def select_shot_prompt_train(train_data_in, shot_number):
     random.shuffle(train_data_in)
@@ -49,6 +54,7 @@ def select_shot_prompt_train(train_data_in, shot_number):
     logger.info("selected_quest_compare: {}".format(selected_quest_compare))
     logger.info("selected_quest: {}".format(selected_quest))
     return selected_quest_compose, selected_quest_compare, selected_quest
+
 
 def sub_mid_to_fn(question, string, question_to_mid_dict):
     seg_list = string.split()
@@ -111,7 +117,8 @@ def ep_generator(question, selected_examples, temp, que_to_s_dict_train, questio
     for que in selected_examples:
         if not que_to_s_dict_train[que]:
             continue
-        prompt = prompt + "Question: " + que + "\n" + "Logical Form: " + sub_mid_to_fn(que, que_to_s_dict_train[que], question_to_mid_dict) + "\n"
+        prompt = prompt + "Question: " + que + "\n" + "Logical Form: " + sub_mid_to_fn(que, que_to_s_dict_train[que],
+                                                                                       question_to_mid_dict) + "\n"
     prompt = prompt + "Question: " + question + "\n" + "Logical Form: "
     got_result = False
     while got_result != True:
@@ -172,6 +179,7 @@ def find_friend_name(gene_exp, org_question):
         reg_ents.append(" ".join(temp))
     return reg_ents
 
+
 def get_right_mid_set(fn, id_dict, question):
     type_to_mid_dict = {}
     type_list = []
@@ -197,6 +205,7 @@ def get_right_mid_set(fn, id_dict, question):
         # logger.info("type_to_mid_dict[any_type]: {}".format(type_to_mid_dict[any_type]))
         selected_mids += list(type_to_mid_dict[any_type].keys())
     return selected_mids
+
 
 def from_fn_to_id_set(fn_list, question, name_to_id_dict, bm25_all_fns, all_fns):
     return_mid_list = []
@@ -224,7 +233,6 @@ def from_fn_to_id_set(fn_list, question, name_to_id_dict, bm25_all_fns, all_fns)
     return return_mid_list
 
 
-
 def convz_fn_to_mids(gene_exp, found_names, found_mids):
     if len(found_names) == 0:
         return gene_exp
@@ -237,6 +245,7 @@ def convz_fn_to_mids(gene_exp, found_names, found_mids):
         start_index = e_idx
     new_string = new_string + gene_exp[start_index:]
     return new_string
+
 
 def add_reverse(org_exp):
     final_candi = [org_exp]
@@ -352,7 +361,7 @@ def bound_to_existed(question, s_expression, found_mids, two_hop_rela_dict,
             if '.' in seg and not seg.startswith('m.') and not seg.startswith('g.') and (
                     expression_segment[j - 1].endswith("AND") or expression_segment[j - 1].endswith("COUNT") or
                     expression_segment[j - 1].endswith("MAX") or expression_segment[j - 1].endswith("MIN")) and (
-            not any(ele.isupper() for ele in seg)):
+                    not any(ele.isupper() for ele in seg)):
                 tokenized_enti = [re.split('\.|_', doc) for doc in possible_entities_set]
                 tokenized_query = re.split('\.|_', processed_seg)
                 bm25 = BM25Okapi(tokenized_enti)
@@ -415,6 +424,7 @@ def process_file_codex_output(filename_before, filename_after):
     for key in codex_eps_dict_after:
         codex_eps_dict_before[key] = codex_eps_dict_after[key]
     return codex_eps_dict_before
+
 
 def all_combiner_evaluation(data_batch, selected_quest_compare, selected_quest_compose, selected_quest,
                             prompt_type, hsearcher, rela_corpus, relationships, temp, que_to_s_dict_train,
@@ -507,15 +517,13 @@ def all_combiner_evaluation(data_batch, selected_quest_compare, selected_quest_c
             total[idx] += 1
             em_score = correct[idx] / total[idx]
             logger.info("================================================================")
-            logger.info("consistent candidates number: {}".format(idx+1))
+            logger.info("consistent candidates number: {}".format(idx + 1))
             logger.info("em_score: {}".format(em_score))
             logger.info("correct: {}".format(correct[idx]))
             logger.info("total: {}".format(total[idx]))
             logger.info("no_ans: {}".format(no_ans[idx]))
             logger.info(" ")
             logger.info("================================================================")
-
-
 
 
 def parse_args():
@@ -538,9 +546,12 @@ def parse_args():
                         default="data/GrailQA/fb_roles", help='freebase roles file path')
     parser.add_argument('--surface_map_path', type=str, metavar='N',
                         default="data/surface_map_file_freebase_complete_all_mention", help='surface map file path')
+    parser.add_argument('--grailqa_cache_path', type=str, metavar='N',
+                        default="data/GrailQA/cache/", help='cache where things will be saved')
 
     args = parser.parse_args()
     return args
+
 
 def main():
     args = parse_args()
@@ -555,7 +566,8 @@ def main():
     que_to_s_dict_train = {data["question"]: data["s_expression"] for data in train_data}
     question_to_mid_dict = process_file_node(args.train_data_path)
     if not args.retrieval:
-        selected_quest_compose, selected_quest_compare, selected_quest = select_shot_prompt_train(train_data, args.shot_num)
+        selected_quest_compose, selected_quest_compare, selected_quest = select_shot_prompt_train(train_data,
+                                                                                                  args.shot_num)
     else:
         selected_quest_compose = []
         selected_quest_compare = []
@@ -563,9 +575,20 @@ def main():
     all_ques = selected_quest_compose + selected_quest_compare
     corpus = [data["question"] for data in train_data]
     tokenized_train_data = []
-    for doc in corpus:
-        nlp_doc = nlp(doc)
-        tokenized_train_data.append([token.lemma_ for token in nlp_doc])
+    grailqa_cache_path = args.grailqa_cache_path
+    os.makedirs(grailqa_cache_path, exist_ok=True)
+    pickle_tokenized_train_path = os.path.join(grailqa_cache_path, 'grailqa_tokenized_train.pickle')
+    if os.path.exists(pickle_tokenized_train_path):
+        tokenized_train_data = pickle.load(pickle_tokenized_train_path)
+    else:
+        for doc in tqdm(corpus):
+            nlp_doc = nlp(doc)
+            tokenized_train_data.append([token.lemma_ for token in nlp_doc])
+        print('pickling the tokenized_train_data')
+        with open(pickle_tokenized_train_path, 'wb') as outfile:
+            pickle.dump(tokenized_train_data, outfile)
+        print('finished pickling the tokenized_train_data')
+
     bm25_train_full = BM25Okapi(tokenized_train_data)
     if not args.retrieval:
         prompt_type = ''
@@ -612,5 +635,6 @@ def main():
                             all_fns, relationship_to_enti, retrieval=args.retrieval, corpus=corpus, nlp_model=nlp,
                             bm25_train_full=bm25_train_full, retrieve_number=args.shot_num)
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     main()
