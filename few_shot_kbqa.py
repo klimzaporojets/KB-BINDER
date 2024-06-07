@@ -579,7 +579,9 @@ def main():
     os.makedirs(grailqa_cache_path, exist_ok=True)
     pickle_tokenized_train_path = os.path.join(grailqa_cache_path, 'grailqa_tokenized_train.pickle')
     if os.path.exists(pickle_tokenized_train_path):
-        tokenized_train_data = pickle.load(pickle_tokenized_train_path)
+        print('pickle_tokenized_train_path exists, loading')
+        tokenized_train_data = pickle.load(open(pickle_tokenized_train_path, 'rb'))
+        print('loaded from pickle_tokenized_train_path')
     else:
         for doc in tqdm(corpus):
             nlp_doc = nlp(doc)
@@ -590,6 +592,7 @@ def main():
         print('finished pickling the tokenized_train_data')
 
     bm25_train_full = BM25Okapi(tokenized_train_data)
+    print('finished loading bm25_train_full')
     if not args.retrieval:
         prompt_type = ''
         random.shuffle(all_ques)
@@ -603,6 +606,8 @@ def main():
         prompt_type = ''
     with open(args.fb_roles_path) as f:
         lines = f.readlines()
+    print('finished loading f.readlines')
+
     relationships = []
     entities_set = []
     relationship_to_enti = {}
@@ -612,9 +617,11 @@ def main():
         entities_set.append(info[0])
         entities_set.append(info[2])
         relationship_to_enti[info[1]] = [info[0], info[2]]
+    print('finished loading everything in lines')
 
     with open(args.surface_map_path) as f:
         lines = f.readlines()
+    print('surface_map_path after f.readlines()')
     name_to_id_dict = {}
     for line in lines:
         info = line.split("\t")
@@ -626,9 +633,11 @@ def main():
         else:
             name_to_id_dict[name] = {}
             name_to_id_dict[name][mid] = score
+    print('loaded all in lines from surface_map_path')
     all_fns = list(name_to_id_dict.keys())
     tokenized_all_fns = [fn.split() for fn in all_fns]
     bm25_all_fns = BM25Okapi(tokenized_all_fns)
+    print('about to run all_combiner_evaluation')
     all_combiner_evaluation(dev_data, selected_quest_compose, selected_quest_compare, selected_quest, prompt_type,
                             hsearcher, rela_corpus, relationships, args.temperature, que_to_s_dict_train,
                             question_to_mid_dict, args.api_key, args.engine, name_to_id_dict, bm25_all_fns,
