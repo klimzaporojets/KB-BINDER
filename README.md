@@ -15,6 +15,11 @@ You can download the index file and put it under `contriever_fb_relation
 
 ## Run Experiments
 
+### Klim plain to debug: 
+```
+python3 few_shot_kbqa.py --debug_nr_surface_lines 1000000
+```
+
 ### KB-BINDER:
 ```
 $ python3 few_shot_kbqa.py --shot_num 40 --temperature 0.3 \

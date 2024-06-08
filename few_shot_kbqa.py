@@ -31,6 +31,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
                     level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger("time recoder")
+import torch
 
 
 def select_shot_prompt_train(train_data_in, shot_number):
@@ -83,7 +84,8 @@ def sub_mid_to_fn(question, string, question_to_mid_dict):
     return new_string
 
 
-def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_output) -> List[str]:
+def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_output,
+                   is_cuda_available) -> List[str]:
     if LLM_engine == 'dummy' and type_output == 'type_generator':
         gene_exp = """Type of the question: Composition
     Answer: Glynne Polan is an opera designer who designed the telephone / the medium.
@@ -220,18 +222,20 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
         return gene_exp
 
 
-def type_generator(question, prompt_type, api_key, LLM_engine) -> str:
+def type_generator(question, prompt_type, api_key, LLM_engine, is_cuda_available) -> str:
     sleep(1)
 
     prompt = prompt_type
     prompt = prompt + " Question: " + question + "Type of the question: "
     # got_result = False
-    to_ret = get_llm_output(prompt, api_key, LLM_engine, nr_choices=1, temperature=0.0, type_output='type_generator')
+    to_ret = get_llm_output(prompt, api_key, LLM_engine, nr_choices=1, temperature=0.0, type_output='type_generator',
+                            is_cuda_available=is_cuda_available)
     return to_ret[0]
 
 
 def ep_generator(question, selected_examples, temp, que_to_s_dict_train, question_to_mid_dict, api_key, LLM_engine,
-                 retrieval=False, corpus=None, nlp_model=None, bm25_train_full=None, retrieve_number=100):
+                 retrieval=False, corpus=None, nlp_model=None, bm25_train_full=None, retrieve_number=100,
+                 is_cuda_available=False):
     if retrieval:
         tokenized_query = nlp_model(question)
         tokenized_query = [token.lemma_ for token in tokenized_query]
@@ -269,7 +273,8 @@ def ep_generator(question, selected_examples, temp, que_to_s_dict_train, questio
     #     except:
     #         sleep(3)
     # gene_exp = [exp["text"].strip() for exp in answer_modi["choices"]]
-    gene_exp = get_llm_output(prompt, api_key, LLM_engine, nr_choices=7, temperature=temp, type_output='ep_generator')
+    gene_exp = get_llm_output(prompt, api_key, LLM_engine, nr_choices=7, temperature=temp, type_output='ep_generator',
+                              is_cuda_available=is_cuda_available)
     return gene_exp
 
 
@@ -561,7 +566,7 @@ def all_combiner_evaluation(data_batch, selected_quest_compare, selected_quest_c
                             prompt_type, hsearcher, rela_corpus, relationships, temp, que_to_s_dict_train,
                             question_to_mid_dict, api_key, LLM_engine, name_to_id_dict, bm25_all_fns, all_fns,
                             relationship_to_enti, retrieval=False, corpus=None, nlp_model=None, bm25_train_full=None,
-                            retrieve_number=100):
+                            retrieve_number=100, is_cuda_available=False):
     correct = [0] * 6
     total = [0] * 6
     no_ans = [0] * 6
@@ -574,7 +579,8 @@ def all_combiner_evaluation(data_batch, selected_quest_compare, selected_quest_c
         for ans in data["answer"]:
             label.append(ans["answer_argument"])
         if not retrieval:
-            gene_type = type_generator(data["question"], prompt_type, api_key, LLM_engine)
+            gene_type = type_generator(data["question"], prompt_type, api_key, LLM_engine,
+                                       is_cuda_available=is_cuda_available)
             logger.info("gene_type: {}".format(gene_type))
         else:
             gene_type = None
@@ -585,13 +591,15 @@ def all_combiner_evaluation(data_batch, selected_quest_compare, selected_quest_c
                                      list(set(selected_quest_compare) | set(selected_quest)),
                                      temp, que_to_s_dict_train, question_to_mid_dict, api_key, LLM_engine,
                                      retrieval=retrieval, corpus=corpus, nlp_model=nlp_model,
-                                     bm25_train_full=bm25_train_full, retrieve_number=retrieve_number)
+                                     bm25_train_full=bm25_train_full, retrieve_number=retrieve_number,
+                                     is_cuda_available=is_cuda_available)
         else:
             gene_exps = ep_generator(data["question"],
                                      list(set(selected_quest_compose) | set(selected_quest)),
                                      temp, que_to_s_dict_train, question_to_mid_dict, api_key, LLM_engine,
                                      retrieval=retrieval, corpus=corpus, nlp_model=nlp_model,
-                                     bm25_train_full=bm25_train_full, retrieve_number=retrieve_number)
+                                     bm25_train_full=bm25_train_full, retrieve_number=retrieve_number,
+                                     is_cuda_available=is_cuda_available)
         two_hop_rela_dict = {}
         answer_candi = []
         removed_none_candi = []
@@ -700,6 +708,8 @@ def print_available_memory(prefix: str = ''):
 
 
 def main():
+    is_cuda_available = torch.cuda.is_available()
+
     args = parse_args()
     print_available_memory('before spacy.load')
     nlp = spacy.load("en_core_web_sm")
@@ -830,7 +840,8 @@ def main():
                             hsearcher, rela_corpus, relationships, args.temperature, que_to_s_dict_train,
                             question_to_mid_dict, args.api_key, args.engine, name_to_id_dict, bm25_all_fns,
                             all_fns, relationship_to_enti, retrieval=args.retrieval, corpus=corpus, nlp_model=nlp,
-                            bm25_train_full=bm25_train_full, retrieve_number=args.shot_num)
+                            bm25_train_full=bm25_train_full, retrieve_number=args.shot_num,
+                            is_cuda_available=is_cuda_available)
 
 
 if __name__ == "__main__":
