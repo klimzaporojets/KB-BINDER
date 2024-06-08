@@ -557,35 +557,61 @@ def parse_args():
     return args
 
 
-def print_available_memory():
+def print_available_memory(prefix: str = ''):
     available_ram = psutil.virtual_memory().available
 
     # Print the available RAM memory
     # f"{original_num:.2f}"
-    print(f'Free RAM memory: {available_ram / 1024 / 1024 / 1024:.2f} Gb')
+    print('-----------------------')
+    print(f'{prefix} - free RAM memory: {available_ram / 1024 / 1024 / 1024:.2f} Gb')
+    print('-----------------------')
 
 
 def main():
     args = parse_args()
+    print_available_memory('before spacy.load')
     nlp = spacy.load("en_core_web_sm")
+    print_available_memory('after spacy.load')
+
     bm25_searcher = LuceneSearcher('contriever_fb_relation/index_relation_fb')
+    print_available_memory('after LuceneSearcher')
+
     query_encoder = AutoQueryEncoder(encoder_dir='facebook/contriever', pooling='mean')
+    print_available_memory('after AutoQueryEncoder')
+
     contriever_searcher = FaissSearcher('contriever_fb_relation/freebase_contriever_index', query_encoder)
+    print_available_memory('after FaissSearcher')
+
     hsearcher = HybridSearcher(contriever_searcher, bm25_searcher)
+    print_available_memory('after HybridSearcher')
+
     rela_corpus = LuceneSearcher('contriever_fb_relation/index_relation_fb')
+    print_available_memory('after LuceneSearcher')
+
     dev_data = process_file(args.eva_data_path)
+    print_available_memory('after for dev_data')
+
     train_data = process_file(args.train_data_path)
+    print_available_memory('after train_data')
+
     que_to_s_dict_train = {data["question"]: data["s_expression"] for data in train_data}
+    print_available_memory('after que_to_s_dict_train')
+
     question_to_mid_dict = process_file_node(args.train_data_path)
+    print_available_memory('after question_to_mid_dict')
     if not args.retrieval:
         selected_quest_compose, selected_quest_compare, selected_quest = select_shot_prompt_train(train_data,
                                                                                                   args.shot_num)
+        print_available_memory('after select_shot_prompt_train')
     else:
         selected_quest_compose = []
         selected_quest_compare = []
         selected_quest = []
+
     all_ques = selected_quest_compose + selected_quest_compare
+    print_available_memory('after all_ques')
     corpus = [data["question"] for data in train_data]
+    print_available_memory('after corpus')
     tokenized_train_data = []
     grailqa_cache_path = args.grailqa_cache_path
     os.makedirs(grailqa_cache_path, exist_ok=True)
