@@ -1,3 +1,4 @@
+import gc
 import os
 import pickle
 
@@ -81,14 +82,20 @@ def sub_mid_to_fn(question, string, question_to_mid_dict):
     return new_string
 
 
-def type_generator(question, prompt_type, api_key, LLM_engine):
+def type_generator(question, prompt_type, api_key, LLM_engine,
+                   model=None, tokenizer=None):
     sleep(1)
 
     prompt = prompt_type
     prompt = prompt + " Question: " + question + "Type of the question: "
     got_result = False
 
-    if LLM_engine == 'ollama:phi':
+    if LLM_engine == 'dummy':
+        to_ret = """Type of the question: Composition
+Answer: Glynne Polan is an opera designer who designed the telephone / the medium.
+"""
+        return to_ret
+    elif LLM_engine == 'ollama:phi':
         response = generate('phi', 'Why is the sky blue?')
         print(response['response'])
         exit()
@@ -99,13 +106,18 @@ def type_generator(question, prompt_type, api_key, LLM_engine):
             torch_dtype="auto",
             trust_remote_code=True,
         )
+        print('type of object model: ', type(model))
         tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-4k-instruct")
+        print('type of object tokenizer: ', type(tokenizer))
 
+        # messages = [
+        #     {"role": "user", "content": "Can you provide ways to eat combinations of bananas and dragonfruits?"},
+        #     {"role": "assistant",
+        #      "content": "Sure! Here are some ways to eat bananas and dragonfruits together: 1. Banana and dragonfruit smoothie: Blend bananas and dragonfruits together with some milk and honey. 2. Banana and dragonfruit salad: Mix sliced bananas and dragonfruits together with some lemon juice and honey."},
+        #     {"role": "user", "content": "What about solving an 2x + 3 = 7 equation?"},
+        # ]
         messages = [
-            {"role": "user", "content": "Can you provide ways to eat combinations of bananas and dragonfruits?"},
-            {"role": "assistant",
-             "content": "Sure! Here are some ways to eat bananas and dragonfruits together: 1. Banana and dragonfruit smoothie: Blend bananas and dragonfruits together with some milk and honey. 2. Banana and dragonfruit salad: Mix sliced bananas and dragonfruits together with some lemon juice and honey."},
-            {"role": "user", "content": "What about solving an 2x + 3 = 7 equation?"},
+            {"role": "user", "content": prompt},
         ]
 
         pipe = pipeline(
@@ -115,14 +127,18 @@ def type_generator(question, prompt_type, api_key, LLM_engine):
         )
 
         generation_args = {
-            "max_new_tokens": 500,
+            "max_new_tokens": 256,
             "return_full_text": False,
             "temperature": 0.0,
             "do_sample": False,
         }
-
+        print('starting running pipe')
         output = pipe(messages, **generation_args)
         print('huggingface generated text: ', output[0]['generated_text'])
+        del tokenizer
+        del model
+        gc.collect()
+        exit()
     else:
         while got_result != True:
             try:
