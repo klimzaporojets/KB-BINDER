@@ -82,8 +82,7 @@ def sub_mid_to_fn(question, string, question_to_mid_dict):
     return new_string
 
 
-def type_generator(question, prompt_type, api_key, LLM_engine,
-                   model=None, tokenizer=None):
+def type_generator(question, prompt_type, api_key, LLM_engine) -> str:
     sleep(1)
 
     prompt = prompt_type
@@ -91,10 +90,12 @@ def type_generator(question, prompt_type, api_key, LLM_engine,
     got_result = False
 
     if LLM_engine == 'dummy':
-        to_ret = """Type of the question: Composition
+        gene_exp = """Type of the question: Composition
 Answer: Glynne Polan is an opera designer who designed the telephone / the medium.
 """
-        return to_ret
+        gene_exp = gene_exp.lower()
+        gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
+        return gene_exp
     elif LLM_engine == 'ollama:phi':
         response = generate('phi', 'Why is the sky blue?')
         print(response['response'])
@@ -135,10 +136,14 @@ Answer: Glynne Polan is an opera designer who designed the telephone / the mediu
         print('starting running pipe')
         output = pipe(messages, **generation_args)
         print('huggingface generated text: ', output[0]['generated_text'])
+        gene_exp = output[0]['generated_text']
+        gene_exp = gene_exp.lower()
+        gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
         del tokenizer
         del model
         gc.collect()
-        exit()
+        return gene_exp
+
     else:
         while got_result != True:
             try:
@@ -181,6 +186,8 @@ def ep_generator(question, selected_examples, temp, que_to_s_dict_train, questio
                                                                                        question_to_mid_dict) + "\n"
     prompt = prompt + "Question: " + question + "\n" + "Logical Form: "
     got_result = False
+
+    # TODO kzaporoj: here rewrite
     while got_result != True:
         try:
             openai.api_key = api_key
@@ -508,7 +515,8 @@ def all_combiner_evaluation(data_batch, selected_quest_compare, selected_quest_c
         else:
             gene_type = None
 
-        if gene_type == "Comparison":
+        # if gene_type == "Comparison":
+        if gene_type.lower() == "comparison":
             gene_exps = ep_generator(data["question"],
                                      list(set(selected_quest_compare) | set(selected_quest)),
                                      temp, que_to_s_dict_train, question_to_mid_dict, api_key, LLM_engine,
@@ -596,8 +604,9 @@ def parse_args():
     parser.add_argument('--api_key', type=str, metavar='N',
                         default=None, help='the api key to access LLM')
     parser.add_argument('--engine', type=str, metavar='N',
-                        default="huggingface:Phi-3-mini-4k-instruct", help='engine name of LLM')
-                        # default="code-davinci-002", help='engine name of LLM')
+                        default="dummy", help='engine name of LLM')
+    # default="huggingface:Phi-3-mini-4k-instruct", help='engine name of LLM')
+    # default="code-davinci-002", help='engine name of LLM')
     parser.add_argument('--retrieval', action='store_true', help='whether to use retrieval-augmented KB-BINDER')
     parser.add_argument('--train_data_path', type=str, metavar='N',
                         default="data/GrailQA/grailqa_v1.0_train.json", help='training data path')
