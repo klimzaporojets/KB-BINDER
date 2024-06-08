@@ -580,7 +580,8 @@ def parse_args():
     parser.add_argument('--api_key', type=str, metavar='N',
                         default=None, help='the api key to access LLM')
     parser.add_argument('--engine', type=str, metavar='N',
-                        default="code-davinci-002", help='engine name of LLM')
+                        default="huggingface:Phi-3-mini-4k-instruct", help='engine name of LLM')
+                        # default="code-davinci-002", help='engine name of LLM')
     parser.add_argument('--retrieval', action='store_true', help='whether to use retrieval-augmented KB-BINDER')
     parser.add_argument('--train_data_path', type=str, metavar='N',
                         default="data/GrailQA/grailqa_v1.0_train.json", help='training data path')
