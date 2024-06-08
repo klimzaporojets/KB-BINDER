@@ -92,6 +92,16 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
         gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
         return [gene_exp]
     elif LLM_engine == 'dummy' and type_output == 'ep_generator':
+        # an extract from example of prompt for ep_generator:
+        # -----
+        # Question: which rocket engine has the isp (sea level) of 243.6?
+        # Logical Form: (AND spaceflight.rocket_engine (JOIN spaceflight.rocket_engine.isp_sea_level 243.6^^http://www.w3.org/2001/XMLSchema#float))
+        # Question: who is the basketball coach that has 51 playoff losses throughout his career?
+        # Logical Form: (AND basketball.basketball_coach (JOIN basketball.basketball_coach.playoff_losses 51^^http://www.w3.org/2001/XMLSchema#integer))
+        # Question: what is the role of opera designer gig who designed the telephone / the medium?
+        # Logical Form:
+        #
+        #
         model = AutoModelForCausalLM.from_pretrained(
             "microsoft/Phi-3-mini-4k-instruct",
             device_map="cpu",
@@ -126,7 +136,8 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
         }
         print('starting running pipe')
         output = pipe(messages, **generation_args)
-        print('huggingface generated text: ', output[0]['generated_text'])
+        # print('huggingface generated text for ep_generator: ', output[0]['generated_text'])
+        print('huggingface generated text for ep_generator: ', output)
         gene_exp = output[0]['generated_text']
         gene_exp = gene_exp.lower()
         gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
@@ -216,84 +227,6 @@ def type_generator(question, prompt_type, api_key, LLM_engine) -> str:
     # got_result = False
     to_ret = get_llm_output(prompt, api_key, LLM_engine, nr_choices=1, temperature=0.0, type_output='type_generator')
     return to_ret[0]
-
-
-#     if LLM_engine == 'dummy':
-#         gene_exp = """Type of the question: Composition
-# Answer: Glynne Polan is an opera designer who designed the telephone / the medium.
-# """
-#         gene_exp = gene_exp.lower()
-#         gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
-#         return gene_exp
-#     elif LLM_engine == 'ollama:phi':
-#         response = generate('phi', 'Why is the sky blue?')
-#         print(response['response'])
-#         exit()
-#     elif LLM_engine == 'huggingface:Phi-3-mini-4k-instruct':
-#         model = AutoModelForCausalLM.from_pretrained(
-#             "microsoft/Phi-3-mini-4k-instruct",
-#             device_map="cpu",
-#             torch_dtype="auto",
-#             trust_remote_code=True,
-#         )
-#         print('type of object model: ', type(model))
-#         tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-4k-instruct")
-#         print('type of object tokenizer: ', type(tokenizer))
-#
-#         # messages = [
-#         #     {"role": "user", "content": "Can you provide ways to eat combinations of bananas and dragonfruits?"},
-#         #     {"role": "assistant",
-#         #      "content": "Sure! Here are some ways to eat bananas and dragonfruits together: 1. Banana and dragonfruit smoothie: Blend bananas and dragonfruits together with some milk and honey. 2. Banana and dragonfruit salad: Mix sliced bananas and dragonfruits together with some lemon juice and honey."},
-#         #     {"role": "user", "content": "What about solving an 2x + 3 = 7 equation?"},
-#         # ]
-#         messages = [
-#             {"role": "user", "content": prompt},
-#         ]
-#
-#         pipe = pipeline(
-#             "text-generation",
-#             model=model,
-#             tokenizer=tokenizer,
-#         )
-#
-#         generation_args = {
-#             "max_new_tokens": 256,
-#             "return_full_text": False,
-#             "temperature": 0.0,
-#             "do_sample": False,
-#         }
-#         print('starting running pipe')
-#         output = pipe(messages, **generation_args)
-#         print('huggingface generated text: ', output[0]['generated_text'])
-#         gene_exp = output[0]['generated_text']
-#         gene_exp = gene_exp.lower()
-#         gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
-#         del tokenizer
-#         del model
-#         gc.collect()
-#         return gene_exp
-#
-#     else:
-#         while got_result != True:
-#             try:
-#                 openai.api_key = api_key
-#                 answer_modi = openai.Completion.create(
-#                     engine=LLM_engine,
-#                     prompt=prompt,
-#                     temperature=0,
-#                     max_tokens=256,
-#                     top_p=1,
-#                     frequency_penalty=0,
-#                     presence_penalty=0,
-#                     stop=["Question: "]
-#                 )
-#                 got_result = True
-#             except Exception as e:
-#                 # sleep(3)
-#                 e.args = ("Exception while accessing the API. The original message:\n%s" % e.args,)
-#                 raise
-#         gene_exp = answer_modi["choices"][0]["text"].strip()
-#     return gene_exp
 
 
 def ep_generator(question, selected_examples, temp, que_to_s_dict_train, question_to_mid_dict, api_key, LLM_engine,
