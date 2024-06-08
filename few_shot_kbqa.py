@@ -7,6 +7,7 @@ import json
 import psutil
 import spacy
 from tqdm import tqdm
+from transformers import AutoModelForCausalLM, pipeline, AutoTokenizer
 
 from sparql_exe import execute_query, get_types, get_2hop_relations, lisp_to_sparql
 from utils import process_file, process_file_node, process_file_rela, process_file_test
@@ -21,6 +22,7 @@ from pyserini.search.hybrid import HybridSearcher
 from pyserini.search.faiss import AutoQueryEncoder
 import random
 import itertools
+from ollama import generate
 
 logging.getLogger().setLevel(logging.INFO)
 logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
@@ -81,26 +83,66 @@ def sub_mid_to_fn(question, string, question_to_mid_dict):
 
 def type_generator(question, prompt_type, api_key, LLM_engine):
     sleep(1)
+
     prompt = prompt_type
     prompt = prompt + " Question: " + question + "Type of the question: "
     got_result = False
-    while got_result != True:
-        try:
-            openai.api_key = api_key
-            answer_modi = openai.Completion.create(
-                engine=LLM_engine,
-                prompt=prompt,
-                temperature=0,
-                max_tokens=256,
-                top_p=1,
-                frequency_penalty=0,
-                presence_penalty=0,
-                stop=["Question: "]
-            )
-            got_result = True
-        except:
-            sleep(3)
-    gene_exp = answer_modi["choices"][0]["text"].strip()
+
+    if LLM_engine == 'ollama:phi':
+        response = generate('phi', 'Why is the sky blue?')
+        print(response['response'])
+        exit()
+    elif LLM_engine == 'huggingface:Phi-3-mini-4k-instruct':
+        model = AutoModelForCausalLM.from_pretrained(
+            "microsoft/Phi-3-mini-4k-instruct",
+            device_map="cpu",
+            torch_dtype="auto",
+            trust_remote_code=True,
+        )
+        tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-4k-instruct")
+
+        messages = [
+            {"role": "user", "content": "Can you provide ways to eat combinations of bananas and dragonfruits?"},
+            {"role": "assistant",
+             "content": "Sure! Here are some ways to eat bananas and dragonfruits together: 1. Banana and dragonfruit smoothie: Blend bananas and dragonfruits together with some milk and honey. 2. Banana and dragonfruit salad: Mix sliced bananas and dragonfruits together with some lemon juice and honey."},
+            {"role": "user", "content": "What about solving an 2x + 3 = 7 equation?"},
+        ]
+
+        pipe = pipeline(
+            "text-generation",
+            model=model,
+            tokenizer=tokenizer,
+        )
+
+        generation_args = {
+            "max_new_tokens": 500,
+            "return_full_text": False,
+            "temperature": 0.0,
+            "do_sample": False,
+        }
+
+        output = pipe(messages, **generation_args)
+        print('huggingface generated text: ', output[0]['generated_text'])
+    else:
+        while got_result != True:
+            try:
+                openai.api_key = api_key
+                answer_modi = openai.Completion.create(
+                    engine=LLM_engine,
+                    prompt=prompt,
+                    temperature=0,
+                    max_tokens=256,
+                    top_p=1,
+                    frequency_penalty=0,
+                    presence_penalty=0,
+                    stop=["Question: "]
+                )
+                got_result = True
+            except Exception as e:
+                # sleep(3)
+                e.args = ("Exception while accessing the API. The original message:\n%s" % e.args,)
+                raise
+        gene_exp = answer_modi["choices"][0]["text"].strip()
     return gene_exp
 
 
@@ -684,12 +726,16 @@ def main():
             name_to_id_dict[name][mid] = score
     print('loaded all in lines from surface_map_path')
     # debug_nr_surface_lines
-    print_available_memory()
-    exit()
+    print_available_memory('after surface_map_path')
+    # exit()
     all_fns = list(name_to_id_dict.keys())
+    print_available_memory('after all_fns')
     tokenized_all_fns = [fn.split() for fn in all_fns]
+    print_available_memory('after tokenized_all_fns')
     bm25_all_fns = BM25Okapi(tokenized_all_fns)
+    print_available_memory('after bm25_all_fns')
     print('about to run all_combiner_evaluation')
+    # exit()
     all_combiner_evaluation(dev_data, selected_quest_compose, selected_quest_compare, selected_quest, prompt_type,
                             hsearcher, rela_corpus, relationships, args.temperature, que_to_s_dict_train,
                             question_to_mid_dict, args.api_key, args.engine, name_to_id_dict, bm25_all_fns,
