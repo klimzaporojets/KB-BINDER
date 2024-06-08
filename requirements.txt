@@ -3,4 +3,3 @@ pathlib==1.0.1
 pyserini
 spacy
 rank_bm25
-itertools
