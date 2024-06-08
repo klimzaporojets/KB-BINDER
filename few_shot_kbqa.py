@@ -3,6 +3,8 @@ import pickle
 
 import openai
 import json
+
+import psutil
 import spacy
 from tqdm import tqdm
 
@@ -548,9 +550,19 @@ def parse_args():
                         default="data/surface_map_file_freebase_complete_all_mention", help='surface map file path')
     parser.add_argument('--grailqa_cache_path', type=str, metavar='N',
                         default="data/GrailQA/cache/", help='cache where things will be saved')
+    parser.add_argument('--debug_nr_surface_lines', type=int, metavar='N',
+                        default=-1, help='the number of shots used in in-context demo')
 
     args = parser.parse_args()
     return args
+
+
+def print_available_memory():
+    available_ram = psutil.virtual_memory().available
+
+    # Print the available RAM memory
+    # f"{original_num:.2f}"
+    print(f'Free RAM memory: {available_ram / 1024 / 1024 / 1024:.2f} Gb')
 
 
 def main():
@@ -590,9 +602,11 @@ def main():
         with open(pickle_tokenized_train_path, 'wb') as outfile:
             pickle.dump(tokenized_train_data, outfile)
         print('finished pickling the tokenized_train_data')
-
+    print_available_memory()
     bm25_train_full = BM25Okapi(tokenized_train_data)
     print('finished loading bm25_train_full')
+    print_available_memory()
+
     if not args.retrieval:
         prompt_type = ''
         random.shuffle(all_ques)
@@ -607,6 +621,7 @@ def main():
     with open(args.fb_roles_path) as f:
         lines = f.readlines()
     print('finished loading f.readlines')
+    print_available_memory()
 
     relationships = []
     entities_set = []
@@ -618,11 +633,19 @@ def main():
         entities_set.append(info[2])
         relationship_to_enti[info[1]] = [info[0], info[2]]
     print('finished loading everything in lines')
+    print_available_memory()
 
     with open(args.surface_map_path) as f:
         lines = f.readlines()
     print('surface_map_path after f.readlines()')
+    print(f'number of lines in surface_map_path: {len(lines)}')
     name_to_id_dict = {}
+
+    if args.debug_nr_surface_lines > -1:
+        print(f'subsampling debug_nr_surface_lines to {args.debug_nr_surface_lines}')
+        lines = random.sample(lines, k=args.debug_nr_surface_lines)
+
+    print(f'reading {len(lines)} of surface into memory')
     for line in lines:
         info = line.split("\t")
         name = info[0]
@@ -634,6 +657,9 @@ def main():
             name_to_id_dict[name] = {}
             name_to_id_dict[name][mid] = score
     print('loaded all in lines from surface_map_path')
+    # debug_nr_surface_lines
+    print_available_memory()
+    exit()
     all_fns = list(name_to_id_dict.keys())
     tokenized_all_fns = [fn.split() for fn in all_fns]
     bm25_all_fns = BM25Okapi(tokenized_all_fns)
