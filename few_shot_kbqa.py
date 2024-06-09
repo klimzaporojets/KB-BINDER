@@ -149,9 +149,8 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
             "max_new_tokens": 256,
             "return_full_text": False,
             "temperature": temperature,
-            "do_sample": True,
-            "top_p": 1
-
+            "do_sample": False
+            # "top_p": 1
             # "do_sample": False,
         }
         print('starting running pipe')
