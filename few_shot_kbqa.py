@@ -167,6 +167,7 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
         del tokenizer
         del model
         gc.collect()
+        print(f'to_ret returned: {to_ret}')
         return to_ret
     else:
         got_result = False
