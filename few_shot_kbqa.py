@@ -180,7 +180,7 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
                     gene_exp = gene_exp[
                                gene_exp_l.index('question:') + len('question:'):gene_exp_l.index('response:')].strip()
             elif type_output == 'ep_generator':
-                if 'question:' in gene_exp:
+                if 'question:' in gene_exp_l:
                     gene_exp = gene_exp[:gene_exp_l.index('question:')].strip()
 
                 if '\n\n' in gene_exp:
