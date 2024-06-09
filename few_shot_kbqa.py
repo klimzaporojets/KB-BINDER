@@ -161,18 +161,18 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
             # print('huggingface generated text: ', output[0]['generated_text'])
             print(f'{i} huggingface_generated {type_output} raw text: {output}')
             gene_exp = output[0]['generated_text']
-            gene_exp = gene_exp.lower()
+            gene_exp_l = gene_exp.lower()
             if type_output == 'type_generator':
-                if 'answer:' in gene_exp:
-                    gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
+                if 'answer:' in gene_exp_l:
+                    gene_exp = gene_exp[gene_exp_l.index('question:') + len('question:'):gene_exp_l.index('answer:')].strip()
                 elif 'response:' in gene_exp:
                     gene_exp = gene_exp[
-                               gene_exp.index('question:') + len('question:'):gene_exp.index('response:')].strip()
+                               gene_exp_l.index('question:') + len('question:'):gene_exp_l.index('response:')].strip()
             elif type_output == 'ep_generator':
                 if 'question:' in gene_exp:
-                    gene_exp = gene_exp[:gene_exp.index('question:')].strip()
+                    gene_exp = gene_exp[:gene_exp_l.index('question:')].strip()
                 elif '\n\n' in gene_exp:
-                    gene_exp = gene_exp[:gene_exp.index('\n\n')].strip()
+                    gene_exp = gene_exp[:gene_exp_l.index('\n\n')].strip()
 
             to_ret.append(gene_exp)
             print('***')
