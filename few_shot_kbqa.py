@@ -165,7 +165,11 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
             if type_output == 'type_generator':
                 gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
             elif type_output == 'ep_generator':
-                gene_exp = gene_exp[:gene_exp.index('question:')].strip()
+                if 'question:' in gene_exp:
+                    gene_exp = gene_exp[:gene_exp.index('question:')].strip()
+                elif '\n\n' in gene_exp:
+                    gene_exp = gene_exp[:gene_exp.index('\n\n')].strip()
+
             to_ret.append(gene_exp)
             print('***')
             print(f'{i} huggingface_generated {type_output} cleaned text: {gene_exp}')
