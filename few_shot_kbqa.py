@@ -123,7 +123,7 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
             "microsoft/Phi-3-mini-4k-instruct",
             device_map=device_map,
             torch_dtype="auto",
-            trust_remote_code=True,
+            trust_remote_code=True
         )
         print('type of object model: ', type(model))
         tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-4k-instruct")
@@ -150,20 +150,25 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
             "return_full_text": False,
             "temperature": temperature,
             "do_sample": True,
+            "top_p": 1
+
             # "do_sample": False,
         }
         print('starting running pipe')
-        output = pipe(messages, **generation_args)
-        # print('huggingface generated text: ', output[0]['generated_text'])
-        print('huggingface generated text: ', output)
-        gene_exp = output[0]['generated_text']
-        gene_exp = gene_exp.lower()
-        if type_output == 'ep_generator':
-            gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
+        to_ret = list()
+        for i in range(nr_choices):
+            output = pipe(messages, **generation_args)
+            # print('huggingface generated text: ', output[0]['generated_text'])
+            print(f'{i} huggingface generated text: ', output)
+            gene_exp = output[0]['generated_text']
+            gene_exp = gene_exp.lower()
+            if type_output == 'type_generator':
+                gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
+            to_ret.append(gene_exp)
         del tokenizer
         del model
         gc.collect()
-        return [gene_exp]
+        return to_ret
     else:
         got_result = False
         while not got_result:
