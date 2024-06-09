@@ -86,6 +86,7 @@ def sub_mid_to_fn(question, string, question_to_mid_dict):
 
 def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_output,
                    is_cuda_available) -> List[str]:
+    print(f'invoked get_llm_output with type_output: {type_output} and prompt: \n {prompt}')
     if LLM_engine == 'dummy' and type_output == 'type_generator':
         gene_exp = """Type of the question: Composition
     Answer: Glynne Polan is an opera designer who designed the telephone / the medium.
@@ -116,6 +117,7 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
         print(response['response'])
         exit()
     elif LLM_engine == 'huggingface:Phi-3-mini-4k-instruct':
+        print(f'invoking the hugging face engine: {LLM_engine}')
         device_map = 'cuda' if is_cuda_available else 'cpu'
         model = AutoModelForCausalLM.from_pretrained(
             "microsoft/Phi-3-mini-4k-instruct",
@@ -152,7 +154,8 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
         }
         print('starting running pipe')
         output = pipe(messages, **generation_args)
-        print('huggingface generated text: ', output[0]['generated_text'])
+        # print('huggingface generated text: ', output[0]['generated_text'])
+        print('huggingface generated text: ', output)
         gene_exp = output[0]['generated_text']
         gene_exp = gene_exp.lower()
         if type_output == 'ep_generator':
