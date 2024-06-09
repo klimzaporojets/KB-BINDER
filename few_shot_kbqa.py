@@ -145,14 +145,24 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
             tokenizer=tokenizer,
         )
 
-        generation_args = {
-            "max_new_tokens": 256,
-            "return_full_text": False,
-            "temperature": temperature,
-            "do_sample": False
-            # "top_p": 1
-            # "do_sample": False,
-        }
+        if temperature > 0.0:
+            generation_args = {
+                "max_new_tokens": 256,
+                "return_full_text": False,
+                "temperature": temperature,
+                "do_sample": True
+                # "top_p": 1
+                # "do_sample": False,
+            }
+        else:
+            generation_args = {
+                "max_new_tokens": 256,
+                "return_full_text": False,
+                "temperature": temperature,
+                "do_sample": False
+                # "top_p": 1
+                # "do_sample": False,
+            }
         print('starting running pipe')
         to_ret = list()
         for i in range(nr_choices):
@@ -164,7 +174,8 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
             gene_exp_l = gene_exp.lower()
             if type_output == 'type_generator':
                 if 'answer:' in gene_exp_l:
-                    gene_exp = gene_exp[gene_exp_l.index('question:') + len('question:'):gene_exp_l.index('answer:')].strip()
+                    gene_exp = gene_exp[
+                               gene_exp_l.index('question:') + len('question:'):gene_exp_l.index('answer:')].strip()
                 elif 'response:' in gene_exp:
                     gene_exp = gene_exp[
                                gene_exp_l.index('question:') + len('question:'):gene_exp_l.index('response:')].strip()
