@@ -94,6 +94,12 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
         gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
         return [gene_exp]
     elif LLM_engine == 'dummy' and type_output == 'ep_generator':
+        gene_exp = "(AND occupation.opera_designer (JOIN occupation.opera_designer.roles " \
+                   "(JOIN opera_designer.opera_designer_role.opera_name Telephone/The Medium)))" \
+                   "\n\nNote: The logical form for the last question is based on the assumption that the opera " \
+                   "designer\'s role in the specific opera \")Telephone/The Medium\" can be linked to their " \
+                   "occupation. However, since \"Telephone/The Medium\" is not a known opera, the logical form may" \
+                   " need to be adjusted based on the actual opera or production in question."
         # an extract from example of prompt for ep_generator:
         # -----
         # Question: which rocket engine has the isp (sea level) of 243.6?
@@ -104,57 +110,16 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
         # Logical Form:
         #
         #
-        model = AutoModelForCausalLM.from_pretrained(
-            "microsoft/Phi-3-mini-4k-instruct",
-            device_map="cpu",
-            torch_dtype="auto",
-            trust_remote_code=True,
-        )
-        print('type of object model: ', type(model))
-        tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-4k-instruct")
-        print('type of object tokenizer: ', type(tokenizer))
-
-        # messages = [
-        #     {"role": "user", "content": "Can you provide ways to eat combinations of bananas and dragonfruits?"},
-        #     {"role": "assistant",
-        #      "content": "Sure! Here are some ways to eat bananas and dragonfruits together: 1. Banana and dragonfruit smoothie: Blend bananas and dragonfruits together with some milk and honey. 2. Banana and dragonfruit salad: Mix sliced bananas and dragonfruits together with some lemon juice and honey."},
-        #     {"role": "user", "content": "What about solving an 2x + 3 = 7 equation?"},
-        # ]
-        messages = [
-            {"role": "user", "content": prompt},
-        ]
-
-        pipe = pipeline(
-            "text-generation",
-            model=model,
-            tokenizer=tokenizer,
-        )
-
-        generation_args = {
-            "max_new_tokens": 256,
-            "return_full_text": False,
-            "temperature": temperature,
-            "do_sample": False,
-        }
-        print('starting running pipe')
-        output = pipe(messages, **generation_args)
-        # print('huggingface generated text for ep_generator: ', output[0]['generated_text'])
-        print('huggingface generated text for ep_generator: ', output)
-        gene_exp = output[0]['generated_text']
-        gene_exp = gene_exp.lower()
-        gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
-        del tokenizer
-        del model
-        gc.collect()
         return [gene_exp]
     elif LLM_engine == 'ollama:phi':
         response = generate('phi', 'Why is the sky blue?')
         print(response['response'])
         exit()
     elif LLM_engine == 'huggingface:Phi-3-mini-4k-instruct':
+        device_map = 'cuda' if is_cuda_available else 'cpu'
         model = AutoModelForCausalLM.from_pretrained(
             "microsoft/Phi-3-mini-4k-instruct",
-            device_map="cpu",
+            device_map=device_map,
             torch_dtype="auto",
             trust_remote_code=True,
         )
@@ -190,12 +155,12 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
         print('huggingface generated text: ', output[0]['generated_text'])
         gene_exp = output[0]['generated_text']
         gene_exp = gene_exp.lower()
-        gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
+        if type_output == 'ep_generator':
+            gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
         del tokenizer
         del model
         gc.collect()
         return [gene_exp]
-
     else:
         got_result = False
         while not got_result:
@@ -676,7 +641,8 @@ def parse_args():
     parser.add_argument('--api_key', type=str, metavar='N',
                         default=None, help='the api key to access LLM')
     parser.add_argument('--engine', type=str, metavar='N',
-                        default="dummy", help='engine name of LLM')
+                        default="huggingface:Phi-3-mini-4k-instruct", help='engine name of LLM')
+    # default="dummy", help='engine name of LLM')
     # default="huggingface:Phi-3-mini-4k-instruct", help='engine name of LLM')
     # default="code-davinci-002", help='engine name of LLM')
     parser.add_argument('--retrieval', action='store_true', help='whether to use retrieval-augmented KB-BINDER')
