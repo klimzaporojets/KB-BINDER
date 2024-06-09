@@ -156,14 +156,20 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
         print('starting running pipe')
         to_ret = list()
         for i in range(nr_choices):
+            print('--------------')
             output = pipe(messages, **generation_args)
             # print('huggingface generated text: ', output[0]['generated_text'])
-            print(f'{i} huggingface generated text: ', output)
+            print(f'{i} huggingface_generated {type_output} raw text: {output}')
             gene_exp = output[0]['generated_text']
             gene_exp = gene_exp.lower()
             if type_output == 'type_generator':
                 gene_exp = gene_exp[gene_exp.index('question:') + len('question:'):gene_exp.index('answer:')].strip()
+            elif type_output == 'ep_generator':
+                gene_exp = gene_exp[:gene_exp.index('question:')].strip()
             to_ret.append(gene_exp)
+            print('***')
+            print(f'{i} huggingface_generated {type_output} cleaned text: {gene_exp}')
+            print('--------------')
         del tokenizer
         del model
         gc.collect()
