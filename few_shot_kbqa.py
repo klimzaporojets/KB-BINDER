@@ -179,9 +179,11 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
                 elif 'response:' in gene_exp:
                     gene_exp = gene_exp[
                                gene_exp_l.index('question:') + len('question:'):gene_exp_l.index('response:')].strip()
+                else:
+                    gene_exp = gene_exp[gene_exp_l.index('question:') + len('question:'):].strip()
 
-                if 'question:' in gene_exp:
-                    gene_exp = gene_exp[gene_exp.index('question:') + len('question:')]
+                # if 'question:' in gene_exp:
+                #     gene_exp = gene_exp[gene_exp.index('question:') + len('question:'): ].strip()
 
                 if '\n\n' in gene_exp:
                     gene_exp = gene_exp[:gene_exp.index('\n\n')].strip()
