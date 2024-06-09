@@ -824,7 +824,7 @@ def main():
             lines = random.sample(lines, k=args.debug_nr_surface_lines)
 
         print(f'reading {len(lines)} of surface into memory')
-        for line in lines:
+        for line in tqdm(lines):
             info = line.split("\t")
             name = info[0]
             score = float(info[1])
