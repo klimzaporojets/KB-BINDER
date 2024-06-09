@@ -182,8 +182,14 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
             elif type_output == 'ep_generator':
                 if 'question:' in gene_exp:
                     gene_exp = gene_exp[:gene_exp_l.index('question:')].strip()
-                elif '\n\n' in gene_exp:
-                    gene_exp = gene_exp[:gene_exp_l.index('\n\n')].strip()
+
+                # if '\n\n' in gene_exp:
+                #     gene_exp = gene_exp[:gene_exp.index('\n\n')].strip()
+
+                # if '\n' in gene_exp:
+                #     gene_exp = gene_exp[:gene_exp.index('\n')].strip()
+                if 'Logical Form' in gene_exp:
+                    gene_exp = gene_exp[:gene_exp.index('Logical Form')].strip()
 
             to_ret.append(gene_exp)
             print('***')
