@@ -188,8 +188,8 @@ def get_llm_output(prompt, api_key, LLM_engine, nr_choices, temperature, type_ou
 
                 # if '\n' in gene_exp:
                 #     gene_exp = gene_exp[:gene_exp.index('\n')].strip()
-                if 'Logical Form' in gene_exp:
-                    gene_exp = gene_exp[:gene_exp.index('Logical Form')].strip()
+                if 'Logical Form:' in gene_exp:
+                    gene_exp = gene_exp[:gene_exp.index('Logical Form:')].strip()
 
             to_ret.append(gene_exp)
             print('***')
