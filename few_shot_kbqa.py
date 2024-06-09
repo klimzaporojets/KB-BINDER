@@ -689,6 +689,8 @@ def parse_args():
                         default="data/surface_map_file_freebase_complete_all_mention", help='surface map file path')
     parser.add_argument('--grailqa_cache_path', type=str, metavar='N',
                         default="data/GrailQA/cache/", help='cache where things will be saved')
+    parser.add_argument('--surface_lines_cache_path', type=str, metavar='N',
+                        default="data/surface_lines.pickle", help='cache where the surface_lines will be pickled')
     parser.add_argument('--debug_nr_surface_lines', type=int, metavar='N',
                         default=-1, help='the number of shots used in in-context demo')
 
@@ -808,22 +810,33 @@ def main():
     print(f'number of lines in surface_map_path: {len(lines)}')
     name_to_id_dict = {}
 
-    if args.debug_nr_surface_lines > -1:
-        print(f'subsampling debug_nr_surface_lines to {args.debug_nr_surface_lines}')
-        lines = random.sample(lines, k=args.debug_nr_surface_lines)
+    # sl_cache_path = args.surface_lines_cache_path
+    sl_cache_path = args.surface_lines_cache_path + (f'_{args.debug_nr_surface_lines}'
+                                                     if args.debug_nr_surface_lines > -1 else f'_all')
+    print(f'subsampling debug_nr_surface_lines to {args.debug_nr_surface_lines}')
+    if os.path.exists(sl_cache_path):
+        print(f'found in pickle: {sl_cache_path}, loading')
+        name_to_id_dict = pickle.load(open(sl_cache_path, 'rb'))
+        print(f'finished loading from pickle: {sl_cache_path}')
+    else:
+        print(f'NOT found in pickle: {sl_cache_path}, parsing')
+        if args.debug_nr_surface_lines > -1:
+            lines = random.sample(lines, k=args.debug_nr_surface_lines)
 
-    print(f'reading {len(lines)} of surface into memory')
-    for line in lines:
-        info = line.split("\t")
-        name = info[0]
-        score = float(info[1])
-        mid = info[2].strip()
-        if name in name_to_id_dict:
-            name_to_id_dict[name][mid] = score
-        else:
-            name_to_id_dict[name] = {}
-            name_to_id_dict[name][mid] = score
-    print('loaded all in lines from surface_map_path')
+        print(f'reading {len(lines)} of surface into memory')
+        for line in lines:
+            info = line.split("\t")
+            name = info[0]
+            score = float(info[1])
+            mid = info[2].strip()
+            if name in name_to_id_dict:
+                name_to_id_dict[name][mid] = score
+            else:
+                name_to_id_dict[name] = {}
+                name_to_id_dict[name][mid] = score
+        print('finished parsing, saving to pickle')
+        pickle.dump(name_to_id_dict, open(sl_cache_path, 'wb'))
+        print('finished parsing, finished saving to pickle')
     # debug_nr_surface_lines
     print_available_memory('after surface_map_path')
     # exit()

@@ -3,3 +3,4 @@ contriever_fb_relation/
 data/
 __pycache__/
 .idea/
+*.log
