@@ -1,5 +1,6 @@
 import gc
 import os
+import pdb
 import pickle
 import traceback
 from typing import List
@@ -640,6 +641,8 @@ def all_combiner_evaluation(data_batch, selected_quest_compare, selected_quest_c
                 print(f'from_fn_to_id_set found_names: {found_names}, '
                       f'question: {data["question"]}, '
                       f'found_mids: {found_mids}')
+
+                pdb.set_trace()  # This will set a breakpoint at this line
 
                 found_mids = [mids[:top_mid] for mids in found_mids]
                 mid_combinations = list(itertools.product(*found_mids))
