@@ -1,3 +1,4 @@
+import traceback
 from typing import List, Tuple
 from SPARQLWrapper import SPARQLWrapper, JSON
 import json
@@ -40,6 +41,7 @@ def lisp_to_nested_expression(lisp_string: str) -> List:
             current_expression = stack.pop()
             token = token[:-1]
     return current_expression[0]
+
 
 def _linearize_lisp_expression(expression: list, sub_formula_id):
     sub_formulas = []
@@ -277,7 +279,6 @@ def lisp_to_sparql(lisp_program: str):
     return '\n'.join(clauses)
 
 
-
 def execute_query(query: str) -> List[str]:
     # print("http://129.97.152.19:3001/sparql")
     sparql.setQuery(query)
@@ -365,7 +366,8 @@ def get_types(entity: str) -> List[str]:
     try:
         results = sparql.query().convert()
     except urllib.error.URLError:
-        print(query)
+        traceback.print_exc()
+        print('kzaporoj RUNNING THE FOLLOWING QUERY ERROR: ', query, '<END QUERY>')
         exit(0)
     rtn = []
     for result in results['results']['bindings']:

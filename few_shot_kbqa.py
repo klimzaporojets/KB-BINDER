@@ -330,6 +330,8 @@ def find_friend_name(gene_exp, org_question):
                     temp = []
     if len(temp) != 0:
         reg_ents.append(" ".join(temp))
+    print(f'find_friend_name gene_exp: {gene_exp}, org_question: {org_question}, '
+          f'reg_ents: {reg_ents}')
     return reg_ents
 
 
@@ -635,6 +637,10 @@ def all_combiner_evaluation(data_batch, selected_quest_compare, selected_quest_c
                     top_mid = 15
                 found_names = find_friend_name(gene_exp, data["question"])
                 found_mids = from_fn_to_id_set(found_names, data["question"], name_to_id_dict, bm25_all_fns, all_fns)
+                print(f'from_fn_to_id_set found_names: {found_names}, '
+                      f'question: {data["question"]}, '
+                      f'found_mids: {found_mids}')
+
                 found_mids = [mids[:top_mid] for mids in found_mids]
                 mid_combinations = list(itertools.product(*found_mids))
                 logger.info("all_iters: {}".format(mid_combinations))
