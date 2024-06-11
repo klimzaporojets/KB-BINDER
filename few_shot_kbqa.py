@@ -1,6 +1,7 @@
 import gc
 import os
 import pickle
+import traceback
 from typing import List
 
 import openai
@@ -624,7 +625,7 @@ def all_combiner_evaluation(data_batch, selected_quest_compare, selected_quest_c
         scouts = gene_exps[:6]
         for idx, gene_exp in enumerate(scouts):
             try:
-                logger.info("gene_exp: {}".format(gene_exp))
+                logger.info("gene_exp: {} <END logger.info>".format(gene_exp))
                 join_num = number_of_join(gene_exp)
                 if join_num > 5:
                     continue
@@ -653,13 +654,16 @@ def all_combiner_evaluation(data_batch, selected_quest_compare, selected_quest_c
                 if not removed_none_candi:
                     answer = None
                 else:
+                    # TODO: kzaporoj - does not enter here for some reason
                     count_dict = Counter([tuple(candi) for candi in removed_none_candi])
                     logger.info("count_dict: {}".format(count_dict))
                     answer = max(count_dict, key=count_dict.get)
             except:
+                traceback.print_exc()
                 if not removed_none_candi:
                     answer = None
                 else:
+                    # TODO: kzaporoj - does not enter here for some reason
                     count_dict = Counter([tuple(candi) for candi in removed_none_candi])
                     logger.info("count_dict: {}".format(count_dict))
                     answer = max(count_dict, key=count_dict.get)
