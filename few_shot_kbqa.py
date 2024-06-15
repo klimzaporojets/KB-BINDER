@@ -270,6 +270,8 @@ def ep_generator(question, selected_examples, temp, que_to_s_dict_train, questio
         prompt = prompt + "Question: " + que + "\n" + "Logical Form: " + sub_mid_to_fn(que, que_to_s_dict_train[que],
                                                                                        question_to_mid_dict) + "\n"
     prompt = prompt + "Question: " + question + "\n" + "Logical Form: "
+
+    print('kzaporoj: built prompt is as follows: ' + prompt)
     # got_result = False
 
     # TODO kzaporoj: here rewrite
@@ -723,7 +725,7 @@ def parse_args():
     parser.add_argument('--surface_lines_cache_path', type=str, metavar='N',
                         default="data/surface_lines.pickle", help='cache where the surface_lines will be pickled')
     parser.add_argument('--debug_nr_surface_lines', type=int, metavar='N',
-                        default=-1, help='the number of shots used in in-context demo')
+                        default=1000000, help='the number of shots used in in-context demo')
 
     args = parser.parse_args()
     return args
