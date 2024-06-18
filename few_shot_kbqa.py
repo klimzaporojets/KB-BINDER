@@ -366,8 +366,8 @@ def get_right_mid_set(fn, id_dict, question):
 
 
 def from_fn_to_id_set(fn_list, question, name_to_id_dict, bm25_all_fns, all_fns):
-    import pdb
-    pdb.set_trace()
+    # import pdb
+    # pdb.set_trace()
     return_mid_list = []
     for fn_org in fn_list:
         drop_dot = fn_org.split()
@@ -634,7 +634,7 @@ def all_combiner_evaluation(data_batch, selected_quest_compare, selected_quest_c
         for idx, gene_exp in enumerate(scouts):
             try:
                 import pdb
-                pdb.set_trace()
+                # pdb.set_trace()
                 logger.info("gene_exp: {} <END logger.info>".format(gene_exp))
                 join_num = number_of_join(gene_exp)
                 if join_num > 5:
