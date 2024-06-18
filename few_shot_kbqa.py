@@ -630,6 +630,8 @@ def all_combiner_evaluation(data_batch, selected_quest_compare, selected_quest_c
         scouts = gene_exps[:6]
         for idx, gene_exp in enumerate(scouts):
             try:
+                import pdb
+                pdb.set_trace()
                 logger.info("gene_exp: {} <END logger.info>".format(gene_exp))
                 join_num = number_of_join(gene_exp)
                 if join_num > 5:
