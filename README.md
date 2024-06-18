@@ -23,6 +23,8 @@ python -u few_shot_kbqa.py --debug_nr_surface_lines -1 2>&1 | tee output_log_202
 python -u few_shot_kbqa.py --debug_nr_surface_lines 15000000 2>&1 | tee output_log_20240609_15M_debug.log
 
 python -u few_shot_kbqa.py --debug_nr_surface_lines -1 2>&1 | tee output_log_20240609_no_debug.log
+
+CUDA_VISIBLE_DEVICES=2 python -u few_shot_kbqa.py --debug_nr_surface_lines -1 2>&1 | tee output_log_20240618_no_debug.log
 ```
 
 ### KB-BINDER:

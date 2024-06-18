@@ -366,6 +366,8 @@ def get_right_mid_set(fn, id_dict, question):
 
 
 def from_fn_to_id_set(fn_list, question, name_to_id_dict, bm25_all_fns, all_fns):
+    import pdb
+    pdb.set_trace()
     return_mid_list = []
     for fn_org in fn_list:
         drop_dot = fn_org.split()
@@ -388,6 +390,7 @@ def from_fn_to_id_set(fn_list, question, name_to_id_dict, bm25_all_fns, all_fns)
             mids = sorted(id_dict.items(), key=lambda x: x[1], reverse=True)
             mids = [mid[0] for mid in mids]
         return_mid_list.append(mids)
+    pdb.set_trace()
     return return_mid_list
 
 
